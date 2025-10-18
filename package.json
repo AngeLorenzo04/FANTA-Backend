@@ -20,7 +20,6 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
-  
   "scripts": {
     "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
@@ -29,6 +28,4 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
   }
-
-
 }
