@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes';
 import sessionRoutes from '../modules/session/session.routes';
 import eventsRoutes from '../modules/event/event.routes';
+import predictionsRoutes from '../modules/predictions/predictions.routes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/session', sessionRoutes);
 router.use('/events', eventsRoutes);
+router.use('/predictions', predictionsRoutes);
 
 export default router;
