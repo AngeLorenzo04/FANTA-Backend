@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes';
+import sessionRoutes from '../modules/session/session.routes';
+import eventsRoutes from '../modules/event/event.routes';
 
 const router = Router();
 
@@ -18,7 +20,9 @@ router.get('/', (req, res) => {
   });
 });
 
-// Auth routes
+// Module routes
 router.use('/auth', authRoutes);
+router.use('/session', sessionRoutes);
+router.use('/events', eventsRoutes);
 
 export default router;
