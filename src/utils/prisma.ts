@@ -1,18 +1,30 @@
 import { PrismaClient } from '@prisma/client';
 
+// Aggiungi pgbouncer=true al connection string
+const connectionString = process.env.DATABASE_URL;
+const urlWithPgBouncer = connectionString?.includes('pgbouncer=true')
+  ? connectionString
+  : `${connectionString}${connectionString?.includes('?') ? '&' : '?'}pgbouncer=true`;
+
 const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: urlWithPgBouncer,
+    },
+  },
 });
 
-// Funzione per testare la connessione
+// Funzione per testare la connessione (SENZA prepared statement)
 export const testConnection = async () => {
   try {
+    // Usa $executeRaw invece di $queryRaw per evitare prepared statements
     await prisma.$connect();
     console.log('✅ Database connected successfully');
     
-    // Test query per verificare che funzioni tutto
-    const result = await prisma.$queryRaw`SELECT NOW() as current_time`;
-    console.log('📊 Database time:', result);
+    // Test semplice senza prepared statement
+    const users = await prisma.user.findMany({ take: 1 });
+    console.log('📊 Database ready - Users table accessible');
     
     return true;
   } catch (error) {
@@ -21,7 +33,6 @@ export const testConnection = async () => {
   }
 };
 
-// Chiudi connessione quando l'app termina
 export const disconnectPrisma = async () => {
   await prisma.$disconnect();
   console.log('👋 Database disconnected');
