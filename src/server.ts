@@ -1,11 +1,31 @@
 import app from './app';
 import dotenv from 'dotenv';
 import { testConnection, disconnectPrisma } from './utils/prisma';
+import os from 'os';
 
 // Carica variabili d'ambiente
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+// Parse PORT env var as a number (fallback 3000)
+const PORT = (() => {
+  const parsed = Number(process.env.PORT ?? 3000);
+  return Number.isNaN(parsed) ? 3000 : parsed;
+})();
+
+// Ottieni l'IP locale del PC
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]!) {
+      if (!iface.internal && iface.family === 'IPv4') {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const LOCAL_IP = getLocalIP();
 
 // Funzione per avviare il server
 const startServer = async () => {
@@ -21,13 +41,14 @@ const startServer = async () => {
     }
 
     // 2. Se DB OK, avvia server Express
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🎉 Server started successfully!');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`🚀 Server:      http://localhost:${PORT}`);
-      console.log(`📊 Health:      http://localhost:${PORT}/health`);
-      console.log(`🔗 API:         http://localhost:${PORT}/api`);
+      console.log(`🌐 Local:       http://${LOCAL_IP}:${PORT}`);
+      console.log(`📊 Health:      http://${LOCAL_IP}:${PORT}/health`);
+      console.log(`🔗 API:         http://${LOCAL_IP}:${PORT}/api`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('💡 Press Ctrl+C to stop\n');
     });
