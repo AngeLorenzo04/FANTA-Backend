@@ -3,7 +3,7 @@
 Benvenuto nel backend di **PredictGame**, un'applicazione dinamica per gestire giochi di predizioni! 
 Questo progetto fornisce le API RESTful per creare sessioni di gioco, gestire eventi, raccogliere predizioni dagli utenti e calcolare le classifiche in tempo reale.
 
-🚀 **Hostato su Render** | 🗄️ **Database su Supabase**
+🚀 **Hostato su Render** | 🗄️ **Database su Supabase** | 🌐 **Live su [predicgame.it](https://predicgame.it)**
 
 ---
 
@@ -47,6 +47,31 @@ Il progetto è costruito con tecnologie moderne per garantire performance e scal
 
 ---
 
+## 🏗 Architettura a Microservizi
+
+Il sistema è progettato seguendo un'architettura modulare che separa logicamente le diverse responsabilità in servizi distinti. Questa struttura facilita la scalabilità e la manutenzione del codice.
+
+```mermaid
+graph TD
+    Client[Client (Frontend)] -->|HTTPS| Gateway[API Gateway / Express App]
+    
+    subgraph "Backend Services"
+        Gateway -->|/auth| Auth[Auth Service]
+        Gateway -->|/sessions| Session[Session Service]
+        Gateway -->|/events| Event[Event Service]
+        Gateway -->|/predictions| Pred[Prediction Service]
+        Gateway -->|/leaderboard| Leader[Leaderboard Service]
+    end
+    
+    Auth -->|Read/Write| DB[(PostgreSQL Database)]
+    Session -->|Read/Write| DB
+    Event -->|Read/Write| DB
+    Pred -->|Read/Write| DB
+    Leader -->|Read Only| DB
+```
+
+---
+
 ## 🔄 Flusso dell'Applicazione
 
 Ecco come si svolge una tipica partita:
@@ -61,7 +86,48 @@ Ecco come si svolge una tipica partita:
 
 ## 🗄 Schema del Database
 
-Il database è strutturato in modo relazionale per garantire l'integrità dei dati. Ecco le entità principali:
+Il database è strutturato in modo relazionale per garantire l'integrità dei dati. Di seguito il diagramma Entity-Relationship (ER):
+
+```mermaid
+erDiagram
+    User ||--o{ GameSession : "manages (Admin)"
+    User ||--o{ Prediction : "makes"
+    GameSession ||--o{ Event : "contains"
+    Event ||--o{ Prediction : "has"
+    
+    User {
+        UUID id PK
+        String email
+        String username
+        String passwordHash
+        Role role "ADMIN | USER"
+    }
+    
+    GameSession {
+        UUID id PK
+        String title
+        SessionState state "SETUP | OPEN | ACTIVE | CLOSED"
+        Int maxPredictionsPerUser
+        UUID adminId FK
+    }
+    
+    Event {
+        UUID id PK
+        UUID sessionId FK
+        String description
+        Int points
+        Boolean happened
+    }
+    
+    Prediction {
+        UUID id PK
+        UUID userId FK
+        UUID eventId FK
+        DateTime createdAt
+    }
+```
+
+Ecco le entità principali:
 
 ### 1. User (`users`)
 Rappresenta gli utenti del sistema.
