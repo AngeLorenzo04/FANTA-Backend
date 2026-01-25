@@ -1,6 +1,6 @@
-# 🔮 Fanta Backend - Predictions Game API
+# 🔮 Fanta Backend - PredictGame API
 
-Benvenuto nel backend di **Fanta**, un'applicazione dinamica per gestire giochi di predizioni! 
+Benvenuto nel backend di **PredictGame**, un'applicazione dinamica per gestire giochi di predizioni! 
 Questo progetto fornisce le API RESTful per creare sessioni di gioco, gestire eventi, raccogliere predizioni dagli utenti e calcolare le classifiche in tempo reale.
 
 🚀 **Hostato su Render** | 🗄️ **Database su Supabase**
