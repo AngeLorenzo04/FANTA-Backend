@@ -53,17 +53,17 @@ Il sistema è progettato seguendo un'architettura modulare che separa logicament
 
 ```mermaid
 graph TD
-    Client[Client(Frontend)] -->|HTTPS| Gateway[API Gateway / Express App]
+    Client["Client (Frontend)"] -->|HTTPS| Gateway["API Gateway / Express App"]
     
     subgraph "Backend Services"
-        Gateway -->|/auth| Auth[Auth Service]
-        Gateway -->|/sessions| Session[Session Service]
-        Gateway -->|/events| Event[Event Service]
-        Gateway -->|/predictions| Pred[Prediction Service]
-        Gateway -->|/leaderboard| Leader[Leaderboard Service]
+        Gateway -->|/auth| Auth["Auth Service"]
+        Gateway -->|/sessions| Session["Session Service"]
+        Gateway -->|/events| Event["Event Service"]
+        Gateway -->|/predictions| Pred["Prediction Service"]
+        Gateway -->|/leaderboard| Leader["Leaderboard Service"]
     end
     
-    Auth -->|Read/Write| DB[(PostgreSQL Database)]
+    Auth -->|Read/Write| DB[("PostgreSQL Database")]
     Session -->|Read/Write| DB
     Event -->|Read/Write| DB
     Pred -->|Read/Write| DB
