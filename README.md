@@ -53,7 +53,7 @@ Il sistema è progettato seguendo un'architettura modulare che separa logicament
 
 ```mermaid
 graph TD
-    Client[Client (Frontend)] -->|HTTPS| Gateway[API Gateway / Express App]
+    Client[Client(Frontend)] -->|HTTPS| Gateway[API Gateway / Express App]
     
     subgraph "Backend Services"
         Gateway -->|/auth| Auth[Auth Service]
