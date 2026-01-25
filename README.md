@@ -1,796 +1,122 @@
-# API Design - Predictions Game
+# 🔮 Fanta Backend - Predictions Game API
 
-## Architettura Microservizi
+Benvenuto nel backend di **Fanta**, un'applicazione dinamica per gestire giochi di predizioni! 
+Questo progetto fornisce le API RESTful per creare sessioni di gioco, gestire eventi, raccogliere predizioni dagli utenti e calcolare le classifiche in tempo reale.
 
-```
-┌─────────────┐
-│   Client    │
-│ (React/Vue) │
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│ API Gateway │ 
-│  (Express)  │
-└──────┬──────┘
-       │
-   ┌───┴────────────────────┐
-   │                        │
-┌──▼────────┐      ┌────────▼────┐
-│   Auth    │      │   Session   │
-│  Service  │      │   Service   │
-└───────────┘      └─────────────┘
-       │                  │
-       └────────┬─────────┘
-                │
-         ┌──────▼──────┐
-         │  Supabase   │
-         │ PostgreSQL  │
-         └─────────────┘
-```
+🚀 **Hostato su Render** | 🗄️ **Database su Supabase**
 
 ---
 
-## 1. Auth Service
-
-### Base URL: `/api/auth`
-
-#### POST `/register`
-Registrazione nuovo utente
-
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "username": "Mario",
-  "password": "securePassword123",
-  "role": "USER"
-}
-```
-
-**Response 201:**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "username": "Mario",
-      "role": "USER"
-    },
-    "accessToken": "eyJhbGc...",
-    "refreshToken": "eyJhbGc..."
-  }
-}
-```
-
-**Errors:**
-- `400` - Email già esistente
-- `422` - Validazione fallita
+## 📋 Indice
+- [Panoramica](#-panoramica)
+- [Funzionalità Principali](#-funzionalità-principali)
+- [Stack Tecnologico](#-stack-tecnologico)
+- [Flusso dell'Applicazione](#-flusso-dellapplicazione)
+- [Schema del Database](#-schema-del-database)
+- [Installazione e Avvio](#-installazione-e-avvio)
 
 ---
 
-#### POST `/login`
-Login utente esistente
+## 🌟 Panoramica
 
-**Request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securePassword123"
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "username": "Mario",
-      "role": "USER"
-    },
-    "accessToken": "eyJhbGc...",
-    "refreshToken": "eyJhbGc..."
-  }
-}
-```
-
-**Errors:**
-- `401` - Credenziali non valide
+L'app permette agli utenti di partecipare a "Sessioni di Gioco" create dagli amministratori. Ogni sessione contiene una serie di eventi futuri. Gli utenti devono indovinare quali eventi si verificheranno. Punti vengono assegnati per ogni predizione corretta, scalando la classifica globale!
 
 ---
 
-#### POST `/refresh`
-Rinnova access token
+## ✨ Funzionalità Principali
 
-**Request:**
-```json
-{
-  "refreshToken": "eyJhbGc..."
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGc...",
-    "refreshToken": "eyJhbGc..."
-  }
-}
-```
+*   **Autenticazione Sicura**: Registrazione e Login con JWT (JSON Web Tokens).
+*   **Gestione Sessioni**: Ciclo di vita completo delle sessioni (Setup -> Aperta -> Attiva -> Conclusa).
+*   **Eventi Dinamici**: Gli admin possono aggiungere eventi con punteggi variabili.
+*   **Sistema di Predizioni**: Gli utenti selezionano gli eventi che credono accadranno.
+*   **Classifiche in Tempo Reale**: Calcolo automatico dei punteggi basato sugli esiti degli eventi.
+*   **Ruoli Utente**: Distinzione tra `USER` (giocatori) e `ADMIN` (gestori del gioco).
 
 ---
 
-#### GET `/me`
-Ottieni info utente corrente
+## 🛠 Stack Tecnologico
 
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+Il progetto è costruito con tecnologie moderne per garantire performance e scalabilità:
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "username": "Mario",
-    "role": "USER",
-    "createdAt": "2025-10-18T10:30:00Z"
-  }
-}
-```
+*   **Runtime**: [Node.js](https://nodejs.org/)
+*   **Framework**: [Express.js](https://expressjs.com/)
+*   **Linguaggio**: [TypeScript](https://www.typescriptlang.org/)
+*   **ORM**: [Prisma](https://www.prisma.io/)
+*   **Database**: [PostgreSQL](https://www.postgresql.org/) (ospitato su **Supabase**)
+*   **Hosting**: [Render](https://render.com/)
 
 ---
 
-#### POST `/logout`
-Logout (invalida refresh token)
+## 🔄 Flusso dell'Applicazione
 
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+Ecco come si svolge una tipica partita:
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-```
-
----
-## 2. Session Service
-
-### Base URL: `/api/session`
+1.  **Creazione (SETUP)**: Un Admin crea una nuova `GameSession` e aggiunge vari `Event` (es. "Pioverà domani?", "La squadra X vincerà?").
+2.  **Apertura (OPEN)**: L'Admin apre la sessione. Gli utenti possono vedere gli eventi e inviare le loro `Prediction`.
+3.  **Gioco in Corso (ACTIVE)**: L'Admin chiude le predizioni. Nessuno può più scommettere. Gli eventi iniziano ad accadere nella realtà.
+4.  **Esiti**: L'Admin aggiorna lo stato degli eventi (`happened: true/false`).
+5.  **Conclusione (CLOSED)**: La sessione termina. I punteggi definitivi vengono calcolati e la `Leaderboard` è finalizzata.
 
 ---
 
-### 📋 Gestione Sessione
+## 🗄 Schema del Database
 
-#### GET `/current`
-Ottieni info sulla sessione corrente
+Il database è strutturato in modo relazionale per garantire l'integrità dei dati. Ecco le entità principali:
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "title": "Weekly Team Meeting",
-    "description": "Gioco delle predizioni",
-    "state": "OPEN",
-    "maxPredictionsPerUser": 5,
-    "admin": {
-      "id": "uuid",
-      "username": "Admin"
-    },
-    "stats": {
-      "totalEvents": 8,
-      "totalParticipants": 12
-    },
-    "createdAt": "2025-10-18T10:00:00Z",
-    "openedAt": "2025-10-18T10:30:00Z"
-  }
-}
-```
+### 1. User (`users`)
+Rappresenta gli utenti del sistema.
+*   `id`: UUID
+*   `email`, `username`: Credenziali
+*   `role`: `ADMIN` o `USER`
 
-**Response 404:**
-```json
-{
-  "success": false,
-  "error": "No active session"
-}
-```
+### 2. GameSession (`game_session`)
+Il contenitore di una partita.
+*   `state`: `SETUP` -> `OPEN` -> `ACTIVE` -> `CLOSED`
+*   `maxPredictionsPerUser`: Limite di predizioni per utente.
+
+### 3. Event (`events`)
+Un singolo evento su cui scommettere all'interno di una sessione.
+*   `description`: Cosa potrebbe accadere.
+*   `points`: Valore dell'evento.
+*   `happened`: Booleano che indica se l'evento si è verificato (null se non ancora deciso).
+
+### 4. Prediction (`predictions`)
+La scommessa di un utente su un evento.
+*   Collega `User` ed `Event`.
+*   Se esiste, significa che l'utente prevede che l'evento accadrà.
 
 ---
 
-#### POST `/create`
-**[ADMIN ONLY]** Crea nuova sessione
+## 🚀 Installazione e Avvio
 
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+Per eseguire il progetto in locale:
 
-**Request:**
-```json
-{
-  "title": "Weekly Team Meeting",
-  "description": "Gioco delle predizioni del venerdì",
-  "maxPredictionsPerUser": 5
-}
-```
+1.  **Clona la repository**:
+    ```bash
+    git clone <url-repository>
+    cd FANTA-Backend
+    ```
 
-**Response 201:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "title": "Weekly Team Meeting",
-    "state": "SETUP",
-    "maxPredictionsPerUser": 5
-  }
-}
-```
+2.  **Installa le dipendenze**:
+    ```bash
+    npm install
+    ```
 
-**Errors:**
-- `403` - Solo admin può creare sessioni
-- `409` - Esiste già una sessione attiva
+3.  **Configura le variabili d'ambiente**:
+    Crea un file `.env` e inserisci l'URL del tuo database Supabase:
+    ```env
+    DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+    JWT_SECRET="tua_chiave_segreta"
+    PORT=3000
+    ```
+
+4.  **Avvia il server di sviluppo**:
+    ```bash
+    npm run dev
+    ```
+
+Il server sarà attivo su `http://localhost:3000`.
 
 ---
 
-#### PATCH `/state`
-**[ADMIN ONLY]** Cambia stato della sessione
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "state": "OPEN"
-}
-```
-
-**Valid transitions:**
-- `SETUP` → `OPEN` (apri predizioni)
-- `OPEN` → `ACTIVE` (chiudi predizioni, avvia)
-- `ACTIVE` → `CLOSED` (concludi sessione)
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "state": "OPEN",
-    "updatedAt": "2025-10-18T10:30:00Z"
-  }
-}
-```
-
-**Errors:**
-- `403` - Solo admin
-- `400` - Transizione non valida
-
----
-
-#### DELETE `/reset`
-**[ADMIN ONLY]** Elimina sessione corrente e tutti i dati
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "message": "Session reset successfully"
-}
-```
-
----
-
-### 🎯 Gestione Eventi
-
-#### GET `/events`
-Ottieni tutti gli eventi della sessione corrente
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "description": "Qualcuno dice 'sinergia'",
-      "points": 5,
-      "displayOrder": 1,
-      "happened": null,
-      "predictionCount": 8
-    },
-    {
-      "id": "uuid",
-      "description": "Meeting in ritardo",
-      "points": 3,
-      "displayOrder": 2,
-      "happened": null,
-      "predictionCount": 5
-    }
-  ]
-}
-```
-
----
-
-#### POST `/events`
-**[ADMIN ONLY]** Crea nuovo evento
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "description": "Qualcuno dice 'sinergia'",
-  "points": 5
-}
-```
-
-**Response 201:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "description": "Qualcuno dice 'sinergia'",
-    "points": 5,
-    "displayOrder": 1
-  }
-}
-```
-
-**Errors:**
-- `403` - Solo admin può creare eventi
-- `400` - Sessione non in stato SETUP
-
----
-
-#### PUT `/events/:eventId`
-**[ADMIN ONLY]** Modifica evento
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "description": "Qualcuno dice 'sinergia' o 'leverage'",
-  "points": 6
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "description": "Qualcuno dice 'sinergia' o 'leverage'",
-    "points": 6
-  }
-}
-```
-
----
-
-#### DELETE `/events/:eventId`
-**[ADMIN ONLY]** Elimina evento
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "message": "Event deleted"
-}
-```
-
----
-
-#### PATCH `/events/:eventId/verify`
-**[ADMIN ONLY]** Verifica se evento è accaduto
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "happened": true
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "happened": true
-  }
-}
-```
-
-**Errors:**
-- `403` - Solo admin
-- `400` - Sessione non in stato ACTIVE o CLOSED
-
----
-
-#### PATCH `/events/verify-batch`
-**[ADMIN ONLY]** Verifica multipli eventi in una volta
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "events": [
-    { "id": "uuid-1", "happened": true },
-    { "id": "uuid-2", "happened": false },
-    { "id": "uuid-3", "happened": true }
-  ]
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "updated": 3
-  }
-}
-```
-
----
-
-### 🎲 Gestione Predizioni (User)
-
-#### GET `/predictions/me`
-Ottieni le mie predizioni per la sessione corrente
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "predictions": [
-      {
-        "eventId": "uuid",
-        "description": "Qualcuno dice 'sinergia'",
-        "points": 5,
-        "happened": null
-      },
-      {
-        "eventId": "uuid",
-        "description": "Meeting in ritardo",
-        "points": 3,
-        "happened": null
-      }
-    ],
-    "count": 2,
-    "maxAllowed": 5,
-    "canAddMore": true
-  }
-}
-```
-
----
-
-#### POST `/predictions`
-Salva/aggiorna le mie predizioni
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Request:**
-```json
-{
-  "eventIds": [
-    "uuid-1",
-    "uuid-2",
-    "uuid-3",
-    "uuid-4",
-    "uuid-5"
-  ]
-}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "predictions": 5,
-    "message": "Predictions saved successfully"
-  }
-}
-```
-
-**Errors:**
-- `400` - Sessione non in stato OPEN
-- `400` - Troppi eventi selezionati (max: 5)
-- `404` - Evento non trovato
-
----
-
-#### DELETE `/predictions/:eventId`
-Rimuovi una predizione
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "message": "Prediction removed"
-}
-```
-
-**Errors:**
-- `400` - Sessione non in stato OPEN
-
----
-
-### 🏆 Leaderboard e Statistiche
-
-#### GET `/leaderboard`
-Ottieni classifica finale
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "userId": "uuid",
-      "username": "Laura",
-      "finalScore": 16,
-      "eventsGuessed": 4,
-      "totalPredictions": 5,
-      "accuracyPercentage": 80.00,
-      "rankPosition": 1
-    },
-    {
-      "userId": "uuid",
-      "username": "Mario",
-      "finalScore": 13,
-      "eventsGuessed": 3,
-      "totalPredictions": 5,
-      "accuracyPercentage": 60.00,
-      "rankPosition": 2
-    }
-  ]
-}
-```
-
-**Errors:**
-- `400` - Sessione non conclusa
-
----
-
-#### GET `/stats`
-Statistiche sessione corrente
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "sessionId": "uuid",
-    "title": "Weekly Team Meeting",
-    "state": "CLOSED",
-    "totalParticipants": 12,
-    "totalEvents": 8,
-    "eventsHappened": 5,
-    "eventsNotHappened": 3,
-    "avgScore": 12.5,
-    "maxScore": 18,
-    "minScore": 5,
-    "mostPredictedEvent": {
-      "description": "Cane o gatto appare",
-      "predictionCount": 10
-    }
-  }
-}
-```
-
----
-
-#### GET `/my-score`
-Il mio punteggio dettagliato
-
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "finalScore": 13,
-    "eventsGuessed": 3,
-    "totalPredictions": 5,
-    "accuracyPercentage": 60.00,
-    "rankPosition": 2,
-    "predictions": [
-      {
-        "description": "Qualcuno dice 'sinergia'",
-        "points": 5,
-        "happened": true,
-        "scored": true
-      },
-      {
-        "description": "Meeting in ritardo",
-        "points": 3,
-        "happened": true,
-        "scored": true
-      },
-      {
-        "description": "Problema tecnico",
-        "points": 4,
-        "happened": false,
-        "scored": false
-      },
-      {
-        "description": "Cane appare",
-        "points": 6,
-        "happened": true,
-        "scored": true
-      },
-      {
-        "description": "Over 30 min",
-        "points": 3,
-        "happened": false,
-        "scored": false
-      }
-    ]
-  }
-}
-```
-
-**Errors:**
-- `400` - Sessione non conclusa
-
----
-
-## Struttura Response Standard
-
-### Success Response
-```json
-{
-  "success": true,
-  "data": { ... }
-}
-```
-
-### Error Response
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "code": "ERROR_CODE",
-  "details": { ... }
-}
-```
-
----
-
-## HTTP Status Codes
-
-- `200` OK - Richiesta successo
-- `201` Created - Risorsa creata
-- `400` Bad Request - Dati non validi
-- `401` Unauthorized - Non autenticato
-- `403` Forbidden - Non autorizzato (es. non admin)
-- `404` Not Found - Risorsa non trovata
-- `409` Conflict - Conflitto (es. sessione già esistente)
-- `422` Unprocessable Entity - Validazione fallita
-- `500` Internal Server Error - Errore server
-
----
-
-## Autenticazione
-
-Tutte le richieste protette richiedono header:
-```
-Authorization: Bearer {accessToken}
-```
-
-**Access Token:**
-- Scade dopo 15 minuti
-- Contiene: `userId`, `role`, `email`
-
-**Refresh Token:**
-- Scade dopo 7 giorni
-- Usato per ottenere nuovo access token
-
----
-
-## Rate Limiting
-
-- **Auth endpoints**: 5 richieste/minuto per IP
-- **Altri endpoints**: 100 richieste/minuto per utente
-
----
-
-## CORS
-
-Origini permesse (development):
-- `http://localhost:3000`
-- `http://localhost:5173`
-
----
-
-## WebSocket (Opzionale - Real-time)
-
-### Namespace: `/session`
-
-**Eventi Client → Server:**
-- `join_session` - Unisciti alla sessione corrente
-- `leave_session` - Esci dalla sessione
-
-**Eventi Server → Client:**
-- `session_state_changed` - Stato sessione cambiato
-- `new_participant` - Nuovo partecipante
-- `predictions_closed` - Predizioni chiuse
-- `leaderboard_ready` - Classifica disponibile
-
-**Esempio:**
-```javascript
-socket.on('session_state_changed', (data) => {
-  console.log('Nuovo stato:', data.state)
-})
-```
-
----
+Developed with ❤️ for TechWeb
